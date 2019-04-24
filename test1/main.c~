@@ -1,0 +1,77 @@
+/*************************************************************************
+	> File Name: main.c
+	> Author: 
+	> Mail: 
+	> Created Time: 2019年04月18日 星期四 12时34分28秒
+ ************************************************************************/
+
+#include<unistd.h>
+#include<stdio.h>
+#include<libusb-1.0/libusb.h>
+
+#define VID 0x0925
+#define PID 0x3881
+
+int main()
+{
+    libusb_device **devs;                // pointer to pointer of device
+    libusb_device_handle *dev_handle;    // a device handle
+    libusb_context *ctx = NULL;          // a libusb session
+    int ret;                               // for return
+    ssize_t cnt;                         // hold number of devices in list
+
+    ret = libusb_init(&ctx);               // initialize the library of the session
+    if (ret < 0)
+    {
+        perror("Init error\n");
+        return 1;
+    }
+
+    libusb_set_debug(ctx, LIBUSB_LOG_LEVEL_INFO);
+    
+    cnt = libusb_get_device_list(ctx,&devs);
+    if (cnt < 0)
+    {
+        perror("Get Device error\n");
+        return 1;
+    }
+
+    printf("%d Devices in list.\n",cnt);
+
+    dev_handle = libusb_open_device_with_vid_pid(ctx, VID, PID);
+
+    printf("dev_handle = %x\n", dev_handle);
+
+    if(dev_handle == NULL)
+    {
+        perror("Cannot open device\n");
+    }
+    else
+    {
+        printf("Device opened\n");
+    }
+
+    ret = libusb_claim_interface(dev_handle, 0);
+    if(ret < 0)
+    {
+        perror("Cannot Claim Interface\n");
+    }
+
+    // ret = libusb_control_transfer(dev_handle,LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN, 0xb0, 0x0000, 0x0000, 0x02, 0x00, 100);
+    ret = libusb_control_transfer(dev_handle,LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_IN, 0xb0, 0x0000, 0x0000, 0x02, 0x00, 100);
+
+
+    if(ret < 0)
+    {
+        printf("ctl ret < 0");
+    }
+    else
+    {
+        printf("ctl ret !< 0, ret = %x",ret);
+    }
+
+
+
+
+
+}
