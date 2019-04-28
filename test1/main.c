@@ -6,11 +6,17 @@
  ************************************************************************/
 
 #include<unistd.h>
+#include<stdlib.h>
 #include<stdio.h>
 #include<libusb-1.0/libusb.h>
 
 #define VID 0x0925
 #define PID 0x3881
+
+// static libusb_device **devs;            // pointer to pointer of device
+// static libusb_device_handle *dev_handle;// a device handle
+// static libusb_context *ctx = NULL;      // a libusb session
+// static struct libusb_transfer *img_transfer;
 
 // struct version_info
 // {
@@ -53,21 +59,46 @@ static int send_samplerate(libusb_device_handle *devhdl)
 }
 
 
+
+
 static void LIBUSB_CALL fn_recv(struct libusb_transfer *transfer)
 {
-   printf("ran fn_recv"); 
+    printf("ran fn_recv\n");
+
+    int i;
+    for(i = 0;i < 32;i++)
+    {
+        printf("buffer %x\n", *transfer->buffer);
+        transfer->buffer++;
+    }
+
+    // int k;
+    // for(k = 0;k < 2;k++)
+    // {
+    //     printf("user_data %x\n", *(int *)transfer->user_data);
+    //     transfer->user_data++;
+    // }
+    
+    // if (transfer->status != LIBUSB_TRANSFER_COMPLETED) // LIBUSB_TRANSFER_COMPLETED = 0
+    if(transfer->status == LIBUSB_TRANSFER_OVERFLOW)      // LIBUSB_TRANSFER_OVERFLOW = 6
+    {
+        fprintf(stderr, "transfer status %d\n", transfer->status);
+        libusb_free_transfer(transfer);
+        // exit(3);
+    }
+   printf("finish fn_recv\n"); 
    //  printf("%x\n",transfer->user_data);
 }
 
+
+
+
 static int bulk_transfer(libusb_device_handle *devhdl)
 {
-    int r;
-    // struct libusb_transfer *transfer;
-    unsigned char buf[32];
-    // int recv[512];
+    /*int r;
+    unsigned char buf[32];    // bulk_transfer长度不能超过int16 类型的65536
     int len;
 
-    // transfer = libusb_alloc_transfer(0);
     r = libusb_bulk_transfer(devhdl, 2 | LIBUSB_ENDPOINT_IN, buf, 32, &len, 100);
     // bulk_transfer就只能这么用,数据一次性的读到缓冲区里
 
@@ -87,26 +118,52 @@ static int bulk_transfer(libusb_device_handle *devhdl)
         }
     }
 
-    printf("recv = %x\n",len);
+    printf("len = %x\n",len);*/
 
-    struct libusb_transfer *transfer;
-    // void * sdi;
+    static struct libusb_transfer *img_transfer;
+    unsigned char buf_fill[32];
+    unsigned char my_user_data[2] = {1, 2};
+    // printf("my %d\n",*my_user_data);
 
-    transfer = libusb_alloc_transfer(0);
-    libusb_fill_bulk_transfer(transfer, devhdl, 2 | LIBUSB_ENDPOINT_IN, buf, 32, fn_recv,NULL , 100);
+    img_transfer = libusb_alloc_transfer(0);
+    
+    libusb_fill_bulk_transfer(img_transfer, devhdl, 2 | LIBUSB_ENDPOINT_IN, buf_fill, sizeof(buf_fill), fn_recv, (void *)my_user_data, 0);                                                                                   
+    // 长度参数是int类型，规定了buf的大小不能超过25, 而且实际上user_data的值是跟着buf在变的，这非常奇怪，也让人不解
+    // 但是还有一种可能，user_data只是传递一个数据结构的指针过去，buf的数据就可以保存到这个数据结构中，
+    // 当然这些操作都非常快
+    // 所以fill_bulk_transfer就是提供一种便利，让使用者在回调函数里做一些快速的操作，比如数据在内存里的存储，而且sigrok好像就是这么写的
+
+    libusb_submit_transfer(img_transfer);
+
+    /*for(i = 0; i < sizeof(buf_fill); i++)
+    {
+        if(i == 0)
+        {
+            printf("buf_fill:");
+        }
+
+        printf("%x", buf_fill[i]);
+
+        if(i == sizeof(buf_fill) - 1)
+        {
+            printf("\n");
+        }
+    }*/
 }
+
+
 
 
 int main()
 {
-    libusb_device **devs;                // pointer to pointer of device
-    libusb_device_handle *dev_handle;    // a device handle
-    libusb_context *ctx = NULL;          // a libusb session
-    int ret;                               // for return
-    ssize_t cnt;                         // hold number of devices in list
+    static libusb_device **devs;            // pointer to pointer of device
+    static libusb_device_handle *dev_handle;// a device handle
+    static libusb_context *ctx = NULL;      // a libusb session
+    int ret;                                // for return
+    ssize_t cnt;                            // hold number of devices in list
 
 
-    ret = libusb_init(&ctx);               // initialize the library of the session
+    ret = libusb_init(&ctx);                // initialize the library of the session
     if (ret < 0)
     {
         perror("Init error\n");
@@ -160,10 +217,15 @@ int main()
     get_revid_version(dev_handle);
     printf("ran get_revid_version.\n");
 
+    // send_samplerate(dev_handle);
+
+    int count = 2;
+    while(count--)
+    {
+        bulk_transfer(dev_handle);
+    }
+
     send_samplerate(dev_handle);
-
-    bulk_transfer(dev_handle);
-
     if(ret < 0)
     {
         printf("ctl ret < 0\n");
