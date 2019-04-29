@@ -13,6 +13,9 @@
 #define VID 0x0925
 #define PID 0x3881
 
+#define buf_fill_len 65536*40// 2621440字节
+static uint8_t buf_fill[buf_fill_len];
+
 // static libusb_device **devs;            // pointer to pointer of device
 // static libusb_device_handle *dev_handle;// a device handle
 // static libusb_context *ctx = NULL;      // a libusb session
@@ -66,11 +69,13 @@ static void LIBUSB_CALL fn_recv(struct libusb_transfer *transfer)
     printf("ran fn_recv\n");
 
     int i;
-    for(i = 0;i < 32;i++)
+    printf("buffer:");
+    for(i = 0;i < buf_fill_len;i++)      // 每次进入回调都有buf_fill_len个字节的数据
     {
-        printf("buffer %x\n", *transfer->buffer);
+        printf("%x", *transfer->buffer); // 存储下来
         transfer->buffer++;
     }
+    printf("\n");
 
     // int k;
     // for(k = 0;k < 2;k++)
@@ -93,7 +98,7 @@ static void LIBUSB_CALL fn_recv(struct libusb_transfer *transfer)
 
 
 
-static int bulk_transfer(libusb_device_handle *devhdl)
+static int fill_bulk_transfer(libusb_device_handle *devhdl)
 {
     /*int r;
     unsigned char buf[32];    // bulk_transfer长度不能超过int16 类型的65536
@@ -121,14 +126,16 @@ static int bulk_transfer(libusb_device_handle *devhdl)
     printf("len = %x\n",len);*/
 
     static struct libusb_transfer *img_transfer;
-    unsigned char buf_fill[32];
+    // unsigned char buf_fill[32];
     unsigned char my_user_data[2] = {1, 2};
     // printf("my %d\n",*my_user_data);
 
     img_transfer = libusb_alloc_transfer(0);
     
-    libusb_fill_bulk_transfer(img_transfer, devhdl, 2 | LIBUSB_ENDPOINT_IN, buf_fill, sizeof(buf_fill), fn_recv, (void *)my_user_data, 0);                                                                                   
-    // 长度参数是int类型，规定了buf的大小不能超过25, 而且实际上user_data的值是跟着buf在变的，这非常奇怪，也让人不解
+    libusb_fill_bulk_transfer(img_transfer, devhdl, 2 | LIBUSB_ENDPOINT_IN,
+                              buf_fill, sizeof(buf_fill), fn_recv, (void *)my_user_data, 0);
+    // 长度参数是int类型，规定了buf的大小不能超过65536,
+    // 而且实际上user_data的值是跟着buf在变的，这非常奇怪，也让人不解
     // 但是还有一种可能，user_data只是传递一个数据结构的指针过去，buf的数据就可以保存到这个数据结构中，
     // 当然这些操作都非常快
     // 所以fill_bulk_transfer就是提供一种便利，让使用者在回调函数里做一些快速的操作，比如数据在内存里的存储，而且sigrok好像就是这么写的
@@ -222,10 +229,10 @@ int main()
     int count = 2;
     while(count--)
     {
-        bulk_transfer(dev_handle);
+        fill_bulk_transfer(dev_handle);
+        send_samplerate(dev_handle);
     }
 
-    send_samplerate(dev_handle);
     if(ret < 0)
     {
         printf("ctl ret < 0\n");
