@@ -72,7 +72,7 @@ static void LIBUSB_CALL fn_recv(struct libusb_transfer *transfer)
     printf("buffer:");
     for(i = 0;i < buf_fill_len;i++)      // 每次进入回调都有buf_fill_len个字节的数据
     {
-        printf("%x", *transfer->buffer); // 存储下来
+        printf("%x", *transfer->buffer); // 存储下来,使用全局变量的多个buf,在回调里把他们的指针存下来,一个回调对应多次传输
         transfer->buffer++;
     }
     printf("\n");
