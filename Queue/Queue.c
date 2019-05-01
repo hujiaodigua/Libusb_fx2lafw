@@ -98,14 +98,64 @@ int EnQueue(LinkQueue *Q,QElemType e)  // 插入元素e为Q的新的队尾元素
     return OK;
 }
 
+int visit(QElemType data_inbuf)
+{
+    // if(out != NULL)
+    // {
+    // }
+
+    int i;
+    for(i = 0;i < buf_fill_len;i++)
+    {
+        printf("%x",data_inbuf.buf_fill[i]);
+    }
+    return OK;
+
+}
+
+int QueueTraverse(LinkQueue Q)   // 从队头到队尾依次对队列Q中每个元素输出
+{
+    QueuePtr p;
+    p=Q.front->next;
+    while(p)
+    {
+        visit(p->data);
+        p=p->next;    
+    }
+    printf("\n");
+    return OK;
+}
+
 int main()
 {
-    QElemType data_inbuf;
+    QElemType data_inbuf;    // 队里数据域的基本单位是data_inbuf
 
-    data_inbuf.buf_fill[0] = 0x01;
-    data_inbuf.buf_fill[1] = 0x02;
-    data_inbuf.buf_fill[2] = 0x03;
-    data_inbuf.buf_fill[3] = 0x04;
+    int i;
+    int k;
 
+
+    k = InitQueue(&q);
+    if(k)
+    {
+	printf("成功地构造了一个空队列!\n");
+    }
+    ClearQueue(&q);
+
+
+    for(i = 0;i < buf_fill_len;i++)
+    {
+        data_inbuf.buf_fill[i] = 0xAA;
+    }
     EnQueue(&q, data_inbuf);
+
+    for(i = 0;i < buf_fill_len;i++)
+    {
+        data_inbuf.buf_fill[i] = 0x55;
+    }
+    EnQueue(&q, data_inbuf);
+
+
+    QueueTraverse(q);
+
+    ClearQueue(&q);
 }
