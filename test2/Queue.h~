@@ -12,6 +12,7 @@
 #include<stdlib.h>
 #include<stdio.h>
 #include<math.h>
+#include<libusb-1.0/libusb.h>
 
 #define OK 1
 #define ERROR 0
@@ -19,12 +20,12 @@
 #define TRUE 1
 #define FALSE 0
 
-#define buf_fill_len 65536*40
+#define buf_fill_len 65536*20// 2621440/2字节
 
 //数据结构
 typedef struct DataStruct
 {
-    unsigned char buf_fill[buf_fill_len];
+    uint8_t buf_fill[buf_fill_len];
 }datastruct;
 
 typedef datastruct QElemType;
@@ -39,6 +40,16 @@ typedef struct          // 队列的链表结构
 {
     QueuePtr front, rear;
 }LinkQueue;
+
+int InitQueue(LinkQueue *Q);
+int DestroyQueue(LinkQueue *Q);
+int ClearQueue(LinkQueue *Q);
+int QueueEmpty(LinkQueue Q);
+int QueueLength(LinkQueue Q);
+int GetHead(LinkQueue Q,QElemType *e);
+int EnQueue(LinkQueue *Q,QElemType e);
+int visit(QElemType data_inbuf);
+int QueueTraverse(LinkQueue Q);
 
 
 #endif
