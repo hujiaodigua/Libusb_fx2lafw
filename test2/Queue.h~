@@ -20,9 +20,9 @@
 #define TRUE 1
 #define FALSE 0
 
-#define buf_fill_len 65536*20// 2621440/2字节
+#define buf_fill_len 65536*24// 字节
 
-extern static FILE *out;
+static FILE *out;
 
 //数据结构
 typedef struct DataStruct

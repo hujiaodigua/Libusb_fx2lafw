@@ -20,7 +20,7 @@
 #define TRUE 1
 #define FALSE 0
 
-#define buf_fill_len 65536*20// 2621440/2字节
+#define buf_fill_len 65536*24// 字节
 
 static FILE *out;
 

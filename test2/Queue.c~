@@ -101,13 +101,10 @@ int visit(QElemType data_inbuf)
     // }
 
     int i;
-    char b_str[8];
     for(i = 0;i < buf_fill_len;i++)
     {
         // printf("%x",data_inbuf.buf_fill[i]);
-	sprintf(b_str,data_inbuf.buf_fill[i],2);
-	fprintf(out, "%s\n", b_str);
-	// fprintf(out, "%x\n", data_inbuf.buf_fill[i]);
+	fprintf(out, "%b\n", data_inbuf.buf_fill[i]);
     }
     return OK;
 

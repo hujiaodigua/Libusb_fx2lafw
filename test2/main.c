@@ -95,12 +95,12 @@ static void LIBUSB_CALL fn_recv(struct libusb_transfer *transfer)
         // }
         
         // if (transfer->status != LIBUSB_TRANSFER_COMPLETED) // LIBUSB_TRANSFER_COMPLETED = 0
-        if(transfer->status == LIBUSB_TRANSFER_OVERFLOW)      // LIBUSB_TRANSFER_OVERFLOW = 6
-        {
+        // if(transfer->status == LIBUSB_TRANSFER_OVERFLOW)      // LIBUSB_TRANSFER_OVERFLOW = 6
+        // {
             /*fprintf(stderr, "transfer status %d\n", transfer->status);*/
             libusb_free_transfer(transfer);
             // exit(3);
-        }
+        // }
         /*printf("finish fn_recv\n"); */
         //  printf("%x\n",transfer->user_data);
         var_flag++;
