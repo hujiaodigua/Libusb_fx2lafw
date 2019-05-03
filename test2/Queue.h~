@@ -22,6 +22,8 @@
 
 #define buf_fill_len 65536*20// 2621440/2字节
 
+extern static FILE *out;
+
 //数据结构
 typedef struct DataStruct
 {
@@ -50,6 +52,7 @@ int GetHead(LinkQueue Q,QElemType *e);
 int EnQueue(LinkQueue *Q,QElemType e);
 int visit(QElemType data_inbuf);
 int QueueTraverse(LinkQueue Q);
+
 
 
 #endif

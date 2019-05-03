@@ -7,6 +7,8 @@
 
 #include"Queue.h"
 
+extern char *filename;
+static FILE *out;
 
 int InitQueue(LinkQueue *Q)    // 构造一个空队列
 { 
@@ -101,7 +103,8 @@ int visit(QElemType data_inbuf)
     int i;
     for(i = 0;i < buf_fill_len;i++)
     {
-        printf("%x",data_inbuf.buf_fill[i]);
+        // printf("%x",data_inbuf.buf_fill[i]);
+	fprintf(out, "%x\n", data_inbuf.buf_fill[i]);
     }
     return OK;
 
@@ -111,11 +114,17 @@ int QueueTraverse(LinkQueue Q)   // 从队头到队尾依次对队列Q中每个�
 {
     QueuePtr p;
     p=Q.front->next;
+
+    out = fopen(filename,"w");
+
     while(p)
     {
         visit(p->data);
         p=p->next;    
     }
+
+    fclose(out);
+
     printf("\n");
     return OK;
 }
