@@ -11,7 +11,7 @@
 #define VID 0x0925
 #define PID 0x3881
 
-#define NUMS 2
+#define NUMS 10
 
 QElemType d;
 LinkQueue q;
@@ -31,6 +31,10 @@ libusb_device_handle *dev_handle;
 
 int call_flag = FALSE; 
 static libusb_context *ctx = NULL;      // a libusb session
+
+char buf_1[buf_fill_len];
+char buf_2[buf_fill_len];
+char buf_3[buf_fill_len];
 /*********************
 **获取固件版本********
 **********************/
@@ -62,7 +66,7 @@ static int send_samplerate(libusb_device_handle *devhdl)
 {
     int r;
     unsigned char byte_cmd[3] = {0x40, 0x00, 0x01};
-    printf("ran send_samplerate\n");
+    // printf("ran send_samplerate\n");
     r = libusb_control_transfer(devhdl,LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_OUT, 0xb1, 0x0000, 0x0000, byte_cmd, sizeof(byte_cmd),0);
 }
 
@@ -70,7 +74,7 @@ void *send_samplerate_thread(void *arg)
 {
     while(TRUE)
     {
-        // printf("samplerate thread\n");
+        printf("samplerate thread\n");
 
         // send_samplerate(dev_handle);
         // libusb_submit_transfer(img_transfer);
@@ -85,14 +89,14 @@ void *send_samplerate_thread(void *arg)
         // libusb_submit_transfer(img_transfer);
         // libusb_submit_transfer(img_transfer);
         // libusb_submit_transfer(img_transfer);
-        // sleep(5);
+        // sleep(1);
         // break;
         // send_samplerate(dev_handle);
         // send_samplerate(dev_handle);
+        // send_samplerate(dev_handle);
         send_samplerate(dev_handle);
-        send_samplerate(dev_handle);
-        pthread_mutex_lock(&mutex);
-        if(var_flag ==  NUMS)
+        // pthread_mutex_lock(&mutex);
+        // if(var_flag ==  NUMS)
         {break;}
     }
     return NULL;
@@ -115,7 +119,7 @@ void *SaveData_thread(void *arg)
 void LIBUSB_CALL fn_recv(struct libusb_transfer *transfer)
 {
     // int ret;
-    call_flag = TRUE;
+    // call_flag = TRUE;
     // printf("submit ret = %d\n", ret);
     if(var_flag <  NUMS)
     {
@@ -123,14 +127,15 @@ void LIBUSB_CALL fn_recv(struct libusb_transfer *transfer)
         // printf("ran fn_recv\n");
         EnQueue(&q, data_inbuf);
         // EnQueue_flag = TRUE;
+        // sleep(1);
         var_flag++;
         // printf("fn_recv var_flag = %d\n",var_flag);
         // ret = libusb_submit_transfer(img_transfer);
-        libusb_submit_transfer(img_transfer);
+        // libusb_submit_transfer(img_transfer);
         // send_samplerate(dev_handle);
-        pthread_mutex_unlock(&mutex); // 开锁
+        // pthread_mutex_unlock(&mutex); // 开锁
     }
-    call_flag = FALSE;
+    // call_flag = FALSE;
 }
 
 
@@ -220,16 +225,20 @@ int main(int argc, char *argv[])
     printf("ran get_revid_version.\n");
  
 
-    int count = NUMS;
-    
-    img_transfer = libusb_alloc_transfer(0);
-    
     // pthread_create(&tid, NULL, send_samplerate_thread, NULL);
-    
-    libusb_fill_bulk_transfer(img_transfer, dev_handle, 2 |LIBUSB_ENDPOINT_IN, data_inbuf.buf_fill,  buf_fill_len, fn_recv, NULL, 0);
-    libusb_submit_transfer(img_transfer);
-    
-    pthread_mutex_init(&mutex, NULL);
+    // pthread_create(&tid_SaveData, NULL, SaveData_thread, NULL);
+    int count = NUMS;
+   
+    while(count--)
+    {
+        img_transfer = libusb_alloc_transfer(0);  
+        libusb_fill_bulk_transfer(img_transfer, dev_handle, 2 |LIBUSB_ENDPOINT_IN, data_inbuf.buf_fill,  buf_fill_len, fn_recv, NULL, 0);
+        libusb_submit_transfer(img_transfer);
+    } 
+    send_samplerate(dev_handle);
+    // pthread_join(tid, NULL);
+    // pthread_join(tid_SaveData, NULL);
+    /*pthread_mutex_init(&mutex, NULL);
     pthread_mutex_lock(&mutex);         // 锁初始化完成，立刻上锁
     
     pthread_create(&tid, NULL, send_samplerate_thread, NULL);
@@ -237,7 +246,7 @@ int main(int argc, char *argv[])
     pthread_join(tid, NULL);
     // pthread_join(tid_SaveData, NULL);
 
-    int length = 0;
+    int length = 0;*/
    
     /*// 两个sbumission和call,一个采样率，再一个submission 就能在call里接收到数据
     while(count--)
