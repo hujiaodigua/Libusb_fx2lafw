@@ -11,7 +11,7 @@
 #define VID 0x0925
 #define PID 0x3881
 
-#define NUMS 10
+#define NUMS 50
 
 QElemType d;
 LinkQueue q;
