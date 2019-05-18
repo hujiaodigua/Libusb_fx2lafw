@@ -22,7 +22,7 @@
 #define TRUE 1
 #define FALSE 0
 
-#define buf_fill_len 40000 // Pi一次bulk传输只能传这么多字节,PC比这个大的多
+#define buf_fill_len 240128 // Pi一次bulk传输只能传这么多字节,PC比这个大的多
 
 static FILE *out;
 

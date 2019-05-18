@@ -127,7 +127,7 @@ void LIBUSB_CALL fn_recv(struct libusb_transfer *transfer)
         // printf("ran fn_recv\n");
         EnQueue(&q, data_inbuf);
         // EnQueue_flag = TRUE;
-        // sleep(1);
+        sleep(1);
         var_flag++;
         // printf("fn_recv var_flag = %d\n",var_flag);
         // ret = libusb_submit_transfer(img_transfer);
@@ -225,7 +225,7 @@ int main(int argc, char *argv[])
     printf("ran get_revid_version.\n");
  
 
-    // pthread_create(&tid, NULL, send_samplerate_thread, NULL);
+    pthread_create(&tid, NULL, send_samplerate_thread, NULL);
     // pthread_create(&tid_SaveData, NULL, SaveData_thread, NULL);
     int count = NUMS;
    
@@ -235,8 +235,8 @@ int main(int argc, char *argv[])
         libusb_fill_bulk_transfer(img_transfer, dev_handle, 2 |LIBUSB_ENDPOINT_IN, data_inbuf.buf_fill,  buf_fill_len, fn_recv, NULL, 0);
         libusb_submit_transfer(img_transfer);
     } 
-    send_samplerate(dev_handle);
-    // pthread_join(tid, NULL);
+    // send_samplerate(dev_handle);
+    pthread_join(tid, NULL);
     // pthread_join(tid_SaveData, NULL);
     /*pthread_mutex_init(&mutex, NULL);
     pthread_mutex_lock(&mutex);         // 锁初始化完成，立刻上锁
