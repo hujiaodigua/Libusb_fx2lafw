@@ -11,7 +11,7 @@
 #define VID 0x0925
 #define PID 0x3881
 
-#define NUMS 50
+#define NUMS 10
 
 QElemType d;
 LinkQueue q;
@@ -19,6 +19,7 @@ LinkQueue q;
 QElemType data_inbuf; 
 
 pthread_mutex_t mutex;
+pthread_mutex_t mutex_a;
 
 int var_flag = 0;
 
@@ -72,10 +73,12 @@ static int send_samplerate(libusb_device_handle *devhdl)
 
 void *send_samplerate_thread(void *arg)
 {
-    while(TRUE)
-    {
-        printf("samplerate thread\n");
+    // while(TRUE)
+    // {
 
+        pthread_mutex_lock(&mutex);
+        printf("samplerate thread\n");
+        printf("......\n");
         // send_samplerate(dev_handle);
         // libusb_submit_transfer(img_transfer);
 
@@ -95,16 +98,17 @@ void *send_samplerate_thread(void *arg)
         // send_samplerate(dev_handle);
         // send_samplerate(dev_handle);
         send_samplerate(dev_handle);
+        libusb_handle_events(ctx);
         // pthread_mutex_lock(&mutex);
         // if(var_flag ==  NUMS)
-        {break;}
-    }
+        // {break;}
+    // }
     return NULL;
 }
 
 void *SaveData_thread(void *arg)
 {
-    while(TRUE)
+    /*while(TRUE)
     {
         if(EnQueue_flag == TRUE)    
         {
@@ -113,7 +117,9 @@ void *SaveData_thread(void *arg)
         }
         if(var_flag == NUMS)
         {break;}
-    }
+    }*/
+    pthread_mutex_lock(&mutex_a);
+    printf("finished\n");
 }
 
 void LIBUSB_CALL fn_recv(struct libusb_transfer *transfer)
@@ -121,13 +127,14 @@ void LIBUSB_CALL fn_recv(struct libusb_transfer *transfer)
     // int ret;
     // call_flag = TRUE;
     // printf("submit ret = %d\n", ret);
+    sleep(1);
     if(var_flag <  NUMS)
     {
         printf("call if\n");
         // printf("ran fn_recv\n");
         EnQueue(&q, data_inbuf);
         // EnQueue_flag = TRUE;
-        sleep(1);
+        // sleep(1);
         var_flag++;
         // printf("fn_recv var_flag = %d\n",var_flag);
         // ret = libusb_submit_transfer(img_transfer);
@@ -164,7 +171,7 @@ int main(int argc, char *argv[])
     // static libusb_context *ctx = NULL;      // a libusb session
     int ret;                                // for return
     ssize_t cnt;                            // hold number of devices in list
-    struct timeval tv;
+    // struct timeval tv;
     pthread_t tid;
     pthread_t tid_SaveData;
     
@@ -224,6 +231,11 @@ int main(int argc, char *argv[])
     get_revid_version(dev_handle);
     printf("ran get_revid_version.\n");
  
+    pthread_mutex_init(&mutex, NULL);
+    pthread_mutex_lock(&mutex);         // 锁初始化完成，立刻上锁
+    
+    pthread_mutex_init(&mutex_a, NULL);
+    pthread_mutex_lock(&mutex_a);
 
     pthread_create(&tid, NULL, send_samplerate_thread, NULL);
     // pthread_create(&tid_SaveData, NULL, SaveData_thread, NULL);
@@ -231,10 +243,13 @@ int main(int argc, char *argv[])
    
     while(count--)
     {
+        // usleep(10);
         img_transfer = libusb_alloc_transfer(0);  
         libusb_fill_bulk_transfer(img_transfer, dev_handle, 2 |LIBUSB_ENDPOINT_IN, data_inbuf.buf_fill,  buf_fill_len, fn_recv, NULL, 0);
         libusb_submit_transfer(img_transfer);
-    } 
+        // usleep(10);
+    }
+    pthread_mutex_unlock(&mutex);
     // send_samplerate(dev_handle);
     pthread_join(tid, NULL);
     // pthread_join(tid_SaveData, NULL);
@@ -304,5 +319,9 @@ int main(int argc, char *argv[])
     }
 
     libusb_free_device_list(devs, 1);
+
+    libusb_release_interface(dev_handle, 0);
+    libusb_close(dev_handle);
+    libusb_exit(ctx);
 
 }

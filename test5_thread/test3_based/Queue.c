@@ -81,7 +81,7 @@ int GetHead(LinkQueue Q,QElemType *e)  // 获得队头元素，若队列不空,�
 }
 
 int EnQueue(LinkQueue *Q,QElemType e)  // 插入元素e为Q的新的队尾元素
-{ 
+{
     QueuePtr s=(QueuePtr)malloc(sizeof(QNode));
 
     if(!s)                 // 存储分配失败
