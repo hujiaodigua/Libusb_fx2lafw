@@ -11,7 +11,7 @@
 #define VID 0x0925
 #define PID 0x3881
 
-#define NUMS 10
+#define NUMS 50
 
 QElemType d;
 LinkQueue q;
@@ -98,7 +98,10 @@ void *send_samplerate_thread(void *arg)
         // send_samplerate(dev_handle);
         // send_samplerate(dev_handle);
         send_samplerate(dev_handle);
-        libusb_handle_events(ctx);
+        libusb_handle_events(ctx);        // 如果不把这个函数放到发送采样率后面去阻塞
+                                          // 提交的bulk_transfer的call的话,发送采样率用的
+                                          // control_transfer的call就会影响到bulk_transfer的
+                                          // 连续传输,就会导致丢失一些数据
         // pthread_mutex_lock(&mutex);
         // if(var_flag ==  NUMS)
         // {break;}
@@ -127,7 +130,14 @@ void LIBUSB_CALL fn_recv(struct libusb_transfer *transfer)
     // int ret;
     // call_flag = TRUE;
     // printf("submit ret = %d\n", ret);
-    sleep(1);
+    //按理第一次
+    
+    usleep(50000);        // 我觉得这里必须要加延迟是因为,多次传输提交上去之后
+                          // 采样率发送成功,数据连续读取后,所有的数据会先放到操作系统的buffer里,
+                          // 自然就会一次又一次从操作系的buffer
+                          // (这个buffer也许是队列结构的)进入bulk_transfer的buf里,这就需要时间
+                          // 不然这次数据还没进到buf里,下次回调又进来了
+
     if(var_flag <  NUMS)
     {
         printf("call if\n");
