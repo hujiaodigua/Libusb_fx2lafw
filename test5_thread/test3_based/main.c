@@ -11,7 +11,11 @@
 #define VID 0x0925
 #define PID 0x3881
 
-#define NUMS 50
+#define NUMS 200
+#define samplerate 12000000
+
+#define SR_48MHz 48000000
+#define SR_30MHz 30000000
 
 QElemType d;
 LinkQueue q;
@@ -33,9 +37,9 @@ libusb_device_handle *dev_handle;
 int call_flag = FALSE; 
 static libusb_context *ctx = NULL;      // a libusb session
 
-char buf_1[buf_fill_len];
-char buf_2[buf_fill_len];
-char buf_3[buf_fill_len];
+// char buf_1[buf_fill_len];
+// char buf_2[buf_fill_len];
+// char buf_3[buf_fill_len];
 /*********************
 **获取固件版本********
 **********************/
@@ -66,8 +70,33 @@ static int get_revid_version(libusb_device_handle *devhdl)
 static int send_samplerate(libusb_device_handle *devhdl)
 {
     int r;
-    unsigned char byte_cmd[3] = {0x40, 0x00, 0x01};
+    int delay;
+    unsigned char flags, delay_h, delay_l;
+    unsigned char byte_cmd[3];
+    // unsigned char byte_cmd[3] = {0x40, 0x00, 0x01};
     // printf("ran send_samplerate\n");
+    
+    if(SR_48MHz % samplerate == 0)
+    {
+        flags = 0x40;
+        delay = (int)(SR_48MHz / samplerate -1);
+        if(delay > (6 * 256))
+        {
+            delay = (int)(0);
+        }
+    }
+
+    if(delay == 0 && (SR_30MHz % samplerate == 0))
+    {
+        flags = 0x00;
+        delay = (int)(SR_30MHz / samplerate - 1);
+    }
+
+    delay_h = (delay >> 8) & 0xff;
+    delay_l = delay & 0xff;
+
+    *byte_cmd = flags, *(byte_cmd+1) = delay_h, *(byte_cmd+2) = delay_l;
+
     r = libusb_control_transfer(devhdl,LIBUSB_REQUEST_TYPE_VENDOR | LIBUSB_ENDPOINT_OUT, 0xb1, 0x0000, 0x0000, byte_cmd, sizeof(byte_cmd),0);
 }
 
@@ -132,7 +161,7 @@ void LIBUSB_CALL fn_recv(struct libusb_transfer *transfer)
     // printf("submit ret = %d\n", ret);
     //按理第一次
     
-    usleep(50000);        // 我觉得这里必须要加延迟是因为,多次传输提交上去之后
+    usleep(80000);        // 我觉得这里必须要加延迟是因为,多次传输提交上去之后
                           // 采样率发送成功,数据连续读取后,所有的数据会先放到操作系统的buffer里,
                           // 自然就会一次又一次从操作系的buffer
                           // (这个buffer也许是队列结构的)进入bulk_transfer的buf里,这就需要时间
@@ -256,8 +285,12 @@ int main(int argc, char *argv[])
         // usleep(10);
         img_transfer = libusb_alloc_transfer(0);  
         libusb_fill_bulk_transfer(img_transfer, dev_handle, 2 |LIBUSB_ENDPOINT_IN, data_inbuf.buf_fill,  buf_fill_len, fn_recv, NULL, 0);
-        libusb_submit_transfer(img_transfer);
-        // usleep(10);
+        ret = libusb_submit_transfer(img_transfer);
+        if(ret != 0 )
+        {
+            printf("sub ret = %d,count = %d\n", ret, count);
+        }
+        usleep(10);
     }
     pthread_mutex_unlock(&mutex);
     // send_samplerate(dev_handle);
